@@ -1,6 +1,9 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext, MessageHandler, filters
 from support_db import add_support_ticket, get_user_support_tickets
+from flask import Flask
+
+app = Flask(__name__)
 
 import sqlite3
 import random
