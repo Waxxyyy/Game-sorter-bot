@@ -14,7 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Экспортируем порт, который будет использоваться Flask-приложением
-EXPOSE 8443
+EXPOSE 8000
 
 # Запускаем Flask-приложение
 CMD ["python", "main.py"]
