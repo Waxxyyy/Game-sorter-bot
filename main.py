@@ -1,12 +1,11 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext, MessageHandler, filters
+from support_db import add_support_ticket, get_user_support_tickets
 
 import sqlite3
 import random
 
 admin_user_id = '1951252873'
-
-
 
 # Define the admin states
 ADMIN_ADD_GAME, ADMIN_ADD_GAME_NAME, ADMIN_ADD_GAME_DESCRIPTION = range(3, 6)
@@ -45,6 +44,7 @@ def create_interest_database(interest):
 
     conn.commit()
     conn.close()
+
 
 # Добавление пользователя в базу данных
 def add_user(user_id, is_registered=False, is_admin=False):
@@ -108,6 +108,7 @@ def get_random_game_from_interest(interest):
     # Return a random game
     return random.choice(games) if games else None
 
+
 def show_game(interest, game_name):
     conn = sqlite3.connect(f'{interest}.db')
     cursor = conn.cursor()
@@ -123,12 +124,14 @@ def show_game(interest, game_name):
     else:
         return f"Игра '{game_name}' не найдена."
 
+
 # Define the list of interests
 interests = ["shooters", "strategy", 'horror', 'mmo', 'sports', 'rpg', 'adventure', '🏳️‍🌈']
 
 # Recreate databases for each interest with the updated schema
 for interest in interests:
     create_interest_database(interest)
+
 
 async def start(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
@@ -195,7 +198,7 @@ async def button(update: Update, context: CallbackContext) -> None:
         elif query.data in interests:
             game = get_random_game_from_interest(query.data)
             if game:
-                game_name = game[1]# Assuming the game name is the second column
+                game_name = game[1]  # Assuming the game name is the second column
                 game_description = game[2]
                 await query.edit_message_text(text=f"Ваша игра на сегодня: {game_name} \n{game_description}")
             else:
@@ -237,12 +240,16 @@ async def button(update: Update, context: CallbackContext) -> None:
 async def support_message(update: Update, context: CallbackContext):
     user_id = update.effective_user.id
     support_text = update.message.text
+    add_support_ticket(user_id, support_text)
+    await context.bot.send_message(chat_id=user_id,
+                                   text="Ваше обращение принято. Мы постараемся помочь вам как можно скорее.")
     try:
         await context.bot.send_message(chat_id=admin_user_id,
                                        text=f"User {user_id} needs support with the following issue:\n{support_text}")
     except telegram.error.BadRequest as e:
         # Handle the error here, for example, log it or notify the user
         print(f"Error sending message: {e}")
+
 
 async def message_handler(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
@@ -266,6 +273,7 @@ async def message_handler(update: Update, context: CallbackContext) -> None:
         # If the user is not in the process of adding a game, ignore the message
         pass
 
+
 def main() -> None:
     # Создайте Application и передайте ему токен вашего бота.
     application = Application.builder().token("7039136722:AAGdRluqei0kMd0JPahe-Cx0JS8wCU_XIdc").build()
@@ -284,8 +292,8 @@ def main() -> None:
     application.add_handler(button_handler)
 
     # Зарегистрируйте обработчик сообщений для тех.поддержки
-    support_message_handler = MessageHandler(None, support_message)
-    application.add_handler(support_message_handler)
+    support_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), support_message)
+    application.add_handler(support_handler)
 
     # Register the help command handler
     help_handler = CommandHandler("help", help_command)
