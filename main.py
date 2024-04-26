@@ -2,6 +2,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext, MessageHandler, filters
 from support_db import add_support_ticket, get_user_support_tickets
 from flask import Flask
+from telegram import InputMediaPhoto
 
 app = Flask(__name__)
 
@@ -146,6 +147,7 @@ async def start(update: Update, context: CallbackContext) -> None:
         [InlineKeyboardButton("Выбрать игру", callback_data='choose_game')],
         [InlineKeyboardButton("Тех.поддержка", callback_data='support')],
         [InlineKeyboardButton("Помощь", callback_data='help')],
+        [InlineKeyboardButton("Показать картинку", callback_data='show_picture')]  # New button for showing a picture
     ]
     if str(user_id) == admin_user_id:
         keyboard.append([InlineKeyboardButton("Добавить игру", callback_data='add_game')])
@@ -217,6 +219,9 @@ async def button(update: Update, context: CallbackContext) -> None:
             reply_markup = InlineKeyboardMarkup(keyboard)
             await query.edit_message_text(text="В какой интерес вы хотите добавить игру?", reply_markup=reply_markup)
             user_data[user_id]['state'] = ADMIN_ADD_GAME
+        elif query.data == 'show_picture':
+            # Send the picture as a new message
+            await query.message.reply_photo(photo='https://cdn.onlinewebfonts.com/svg/img_557398.png')
         else:
             await query.edit_message_text(text="Извините, я не понял ваш запрос.")
     elif user_data[user_id]['state'] == ADMIN_ADD_GAME:
